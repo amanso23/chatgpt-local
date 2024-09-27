@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Local</title>
+    <style>
+        body{
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f0f0f0;
+            display: grid;
+            place-content: center;
+            height: 100dvh;
+        }
+
+        main{
+            width: 400px;
+            max-width: 100%;
+            height: 70vh;
+
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgb(0, 0, 0, 0.1);
+            padding: 8px;
+            margin-bottom: 16px; 
+
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            
+        }
+
+        ul{
+            display: flex;
+            flex-direction: column;
+            list-style: none;
+            padding: 0;
+        }
+
+        .message{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin: 4px 0;
+            padding: 4px 8px;
+
+            > span{
+                width: 36px;
+                height: 36px;
+                background-color: #eee;
+                font-size: 12px;
+                font-weight: 500;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 100%;
+            }
+
+            p{
+                border-radius: 4px;
+                padding: 4px 8px;
+                margin-top: 4px;
+            }
+
+            &.user{
+                align-self: flex-end;
+                align-items: flex-end;
+                span, p{
+                    background: #ddecff;
+                }
+            }
+
+            &.bot{
+                align-self: self-start;
+                span, p{
+                    background: #c5ffdb;
+                }
+            }
+        }
+
+        form{
+            display: flex;
+
+            input{
+                border-radius: 999999px;
+                flex-grow: 1;
+                border: 0;
+                padding: 8px;
+                margin-right: 8px;
+                border: 1px solid #ccc;
+            }
+
+            button {
+                background: #09f;
+                border: 0;
+                color: white;
+                border-radius: 6px;
+                cursor: pointer;
+                padding: 8px;
+                transition: background .3s ease;
+
+                &[disabled]{
+                    background: #09f;
+                    opacity: .6;
+                    pointer-events: none;
+                }
+
+                &:hover{
+                    background-color: rgb(1, 103, 172);
+                }
+
+            }
+        }
+
+        small{
+            font-size: 10px;
+            color: #555;
+            margin: auto;
+            width: 400px;
+            margin-top: 10px;
+        }
+    </style>
+
+<script type="module">  // Define el script como un módulo, lo que permite importar y exportar funciones.
+
+    import { CreateWebWorkerMLCEngine } from "https://esm.sh/@mlc-ai/web-llm";
+    // Importa la función CreateMLCEngine desde una URL externa, que es utilizada para crear un motor de inteligencia artificial.
+
+    const $ = el => document.querySelector(el);  
+    // Definimos un alias '$' para el método querySelector, que selecciona elementos del DOM de forma más compacta.
+
+    const $form = $('form')  // Selecciona el elemento <form> del DOM.
+    const $input = $('form input')  // Selecciona el campo de entrada <input> dentro del formulario.
+    const $template = $('#message-template')  // Selecciona el template de mensajes, que será clonado para cada mensaje.
+    const $messages = $('ul')  // Selecciona la lista <ul> donde se agregarán los mensajes.
+    const $container = $('main')  // Selecciona el contenedor <main>, usado para gestionar el scroll.
+    const $button = $('button')  // Selecciona el botón de envío.
+    const $info = $('small')  // Selecciona el elemento <small> que muestra información de progreso.
+
+    let messages = []  // Inicializa un array para almacenar los mensajes intercambiados entre el usuario y el bot.
+
+    // const SELECTED_MODEL = 'Llama-3.1-8B-Instruct-q4f32_1-MLC-1k'  
+    const SELECTED_MODEL = 'SmolLM-1.7B-Instruct-q4f16_1-MLC'
+    // Define el modelo de IA seleccionado para ser utiö«lizado en las respuestas del bot.
+
+    const engine = await CreateWebWorkerMLCEngine(
+        new Worker('/worker.js', {type: 'module'}),
+        SELECTED_MODEL,
+        {
+            initProgressCallback: (info) => {
+                $info.textContent = `${info.text}`  
+                // Actualiza el contenido del elemento $info para mostrar el progreso de inicialización del motor.
+                if (info.progress === 1) {
+                    $button.removeAttribute('disabled')  
+                    // Habilita el botón de envío una vez que la inicialización del modelo está completa.
+                }
+            }
+        }
+    )
+
+    $form.addEventListener('submit', async(event) => {  
+        // Añade un evento al formulario que se dispara cuando el usuario envía un mensaje.
+        event.preventDefault()  
+        // Previene el comportamiento por defecto del formulario (recargar la página).
+
+        const messageText = $input.value.trim()  
+        // Captura el valor del campo de entrada y elimina los espacios en blanco.
+
+        if (messageText !== '') {
+            $input.value = ''  
+            // Si el mensaje no está vacío, limpia el campo de entrada.
+        }
+
+        addMessage(messageText, 'user')  
+        // Añade el mensaje del usuario al chat y lo renderiza en la interfaz.
+
+        $button.setAttribute('disabled', '')  
+        // Deshabilita el botón para evitar que el usuario envíe otro mensaje hasta que la respuesta del bot esté lista.
+
+        const userMessage = {
+            role: 'user',
+            content: messageText
+        }  
+        // Crea un objeto que representa el mensaje del usuario con su rol y contenido.
+
+        messages.push(userMessage)  
+        // Añade el mensaje del usuario al array de mensajes.
+
+        const chunks = await engine.chat.completions.create({
+            messages,
+            stream: true
+        })  
+        // Envía los mensajes al modelo de IA para obtener una respuesta de manera secuencial (en flujo).
+
+        let reply = ""  
+        // Variable para acumular la respuesta del bot.
+
+        const $botMessage = addMessage("", 'bot')  
+        // Añade un mensaje vacío para el bot en la interfaz, se irá llenando con la respuesta.
+
+        for await(const chunk of chunks) {
+            const [choice] = chunk.choices  
+            // Extrae la elección de respuesta del chunk actual.
+            const content = choice?.delta?.content ?? ""  
+            // Obtiene el contenido parcial de la respuesta. Si no hay contenido, devuelve una cadena vacía.
+            reply += content  
+            // Añade el contenido parcial a la respuesta acumulada.
+            $botMessage.textContent = reply  
+            // Actualiza el mensaje del bot en la interfaz con la respuesta parcial.
+        }
+
+        $button.removeAttribute('disabled')  
+        // Vuelve a habilitar el botón de envío después de que el bot haya respondido.
+
+        messages.push({
+            role: 'assistant',
+            content: reply
+        })  
+        // Añade la respuesta final del bot al array de mensajes.
+
+        $container.scrollTop = $container.scrollHeight  
+        // Hace que la ventana del chat se desplace hacia abajo, mostrando el mensaje más reciente.
+    })
+
+    const addMessage = (text, sender) => {
+
+        const clonedTemplate = $template.content.cloneNode(true)  
+        // Clona el contenido del template de mensajes para crear un nuevo mensaje.
+
+        const $newMessage = clonedTemplate.querySelector('.message')  
+        // Selecciona el elemento de clase '.message' dentro del clon del template.
+
+        const $who = $newMessage.querySelector('span')  
+        // Selecciona el elemento <span> que muestra quién envió el mensaje.
+        const $text = $newMessage.querySelector('p')  
+        // Selecciona el elemento <p> que contendrá el texto del mensaje.
+
+        $text.textContent = text  
+        // Establece el texto del mensaje.
+        $who.textContent = sender === 'bot' ? 'GPT' : 'Tú'  
+        // Establece el remitente: 'GPT' si es el bot, o 'Tú' si es el usuario.
+        $newMessage.classList.add(sender)  
+        // Añade una clase que indica si el mensaje fue enviado por el usuario o por el bot.
+
+        $messages.appendChild($newMessage)  
+        // Añade el nuevo mensaje a la lista de mensajes en la interfaz.
+        $container.scrollTop = $container.scrollHeight  
+        // Hace scroll automáticamente hacia abajo para mostrar el último mensaje.
+
+        return $text  
+        // Devuelve el elemento <p> que contiene el texto del mensaje.
+    }
+
+</script>
+
+
+</head>
+<body>
+    <main>
+        <ul>
+        </ul>
+    </main>
+
+    <form>
+        <input name="message" placeholder="Escribe tu mensaje aquí...">
+        <button type="submit" disabled>Enviar</button>
+    </form>
+
+    <small></small>
+
+    <template id="message-template">
+        <li class="message">
+            <span></span>
+            <p></p>
+        </li>
+    </template>
+
+</body>
+</html>
