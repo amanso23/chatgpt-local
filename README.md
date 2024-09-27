@@ -32,5 +32,5 @@ Este proyecto no requiere instalación de dependencias o configuración de servi
 
 ##
 
-Este proyecto fue desarrollado siguiendo un curso de Midudev en YouTube ([text](https://www.youtube.com/watch?v=HvoiF1MCPGs&ab_channel=midulive))
+Este proyecto fue desarrollado siguiendo un curso de Midudev en YouTube ([enlace](https://www.youtube.com/watch?v=HvoiF1MCPGs&ab_channel=midulive))
 
