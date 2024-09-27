@@ -30,3 +30,7 @@ Este proyecto no requiere instalación de dependencias o configuración de servi
    ```bash
    git clone https://github.com/amanso23/chatgpt-local.git
 
+##
+
+Este proyecto fue desarrollado siguiendo un curso de Midudev en YouTube ([text](https://www.youtube.com/watch?v=HvoiF1MCPGs&ab_channel=midulive))
+

@@ -5,119 +5,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatGPT Local</title>
     <style>
-        body{
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background-color: #f0f0f0;
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1F1F1F; /* Fondo oscuro */
             display: grid;
             place-content: center;
-            height: 100dvh;
+            height: 100vh;
+            margin: 0;
+            color: #E0E0E0; /* Texto claro */
         }
 
-        main{
+        main {
             width: 400px;
             max-width: 100%;
             height: 70vh;
-
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgb(0, 0, 0, 0.1);
-            padding: 8px;
-            margin-bottom: 16px; 
-
+            background-color: #2C2C2C; /* Fondo del contenedor oscuro */
+            border: 1px solid #444; /* Borde oscuro */
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Sombra más intensa */
+            padding: 16px;
+            margin-bottom: 16px;
             overflow-y: auto;
             scroll-behavior: smooth;
-            
+            scrollbar-width:thin ;
+
         }
 
-        ul{
+        ul {
             display: flex;
             flex-direction: column;
             list-style: none;
             padding: 0;
         }
 
-        .message{
+        .message {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            margin: 4px 0;
-            padding: 4px 8px;
+            gap: 6px; 
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 10px; 
+            transition: background 0.3s ease;
 
-            > span{
+            span {
                 width: 36px;
                 height: 36px;
-                background-color: #eee;
-                font-size: 12px;
-                font-weight: 500;
+                background-color: #4f46e5; /* Color del remitente (usuario) */
+                color: white;
+                font-size: 14px;
+                font-weight: 600;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                border-radius: 100%;
+                border-radius: 50%;
             }
 
-            p{
-                border-radius: 4px;
-                padding: 4px 8px;
-                margin-top: 4px;
+            p {
+                border-radius: 8px; 
+                padding: 10px;
+                margin: 0;
+                background: #3C3C3C; /* Fondo oscuro para los mensajes */
+                box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1); /* Sombra suave */
             }
 
-            &.user{
+            &.user {
                 align-self: flex-end;
-                align-items: flex-end;
-                span, p{
-                    background: #ddecff;
-                }
+                background: #4B6F9D; /* Azul oscuro para el usuario */
             }
 
-            &.bot{
-                align-self: self-start;
-                span, p{
-                    background: #c5ffdb;
-                }
+            &.bot {
+                align-self: flex-start;
+                background: #4E7F8E; /* Verde oscuro para el bot */
             }
         }
 
-        form{
+        form {
             display: flex;
+            margin-top: 10px;
+        }
 
-            input{
-                border-radius: 999999px;
-                flex-grow: 1;
-                border: 0;
-                padding: 8px;
-                margin-right: 8px;
-                border: 1px solid #ccc;
-            }
+        input {
+            border-radius: 20px;
+            flex-grow: 1;
+            border: 1px solid #555; /* Borde gris oscuro */
+            padding: 10px;
+            font-size: 14px;
+            margin-right: 8px;
+            background-color: #333; /* Fondo oscuro para el input */
+            color: #E0E0E0; /* Texto claro */
+            transition: border-color 0.3s;
+            outline: none;
 
-            button {
-                background: #09f;
-                border: 0;
-                color: white;
-                border-radius: 6px;
-                cursor: pointer;
-                padding: 8px;
-                transition: background .3s ease;
-
-                &[disabled]{
-                    background: #09f;
-                    opacity: .6;
-                    pointer-events: none;
-                }
-
-                &:hover{
-                    background-color: rgb(1, 103, 172);
-                }
-
+            &:focus {
+                border-color: #4f46e5; /* Color de enfoque */
+                background-color: #444; /* Cambio de fondo al enfocar */
             }
         }
 
-        small{
-            font-size: 10px;
-            color: #555;
-            margin: auto;
-            width: 400px;
+        button {
+            background: #4f46e5; /* Color del botón */
+            border: none;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            padding: 10px 16px;
+            transition: background .3s ease;
+
+            &[disabled] {
+                background: #666; /* Color para el botón deshabilitado */
+                opacity: 0.6;
+                pointer-events: none;
+            }
+
+            &:hover {
+                background-color: #4338ca; /* Color de fondo en hover */
+            }
+        }
+
+        small {
+            font-size: 12px;
+            color: #B0B0B0; /* Texto más claro para el pie de página */
             margin-top: 10px;
+            display: block;
+            width: 400px;
         }
     </style>
 
@@ -139,25 +149,58 @@
 
     let messages = []  // Inicializa un array para almacenar los mensajes intercambiados entre el usuario y el bot.
 
-    // const SELECTED_MODEL = 'Llama-3.1-8B-Instruct-q4f32_1-MLC-1k'  
-    const SELECTED_MODEL = 'SmolLM-1.7B-Instruct-q4f16_1-MLC'
+    const SELECTED_MODEL = 'Llama-3.1-8B-Instruct-q4f32_1-MLC-1k'  
+    //const SELECTED_MODEL = 'SmolLM-1.7B-Instruct-q4f16_1-MLC'
     // Define el modelo de IA seleccionado para ser utiö«lizado en las respuestas del bot.
 
-    const engine = await CreateWebWorkerMLCEngine(
-        new Worker('/worker.js', {type: 'module'}),
-        SELECTED_MODEL,
-        {
-            initProgressCallback: (info) => {
-                $info.textContent = `${info.text}`  
-                // Actualiza el contenido del elemento $info para mostrar el progreso de inicialización del motor.
-                if (info.progress === 1) {
-                    $button.removeAttribute('disabled')  
-                    // Habilita el botón de envío una vez que la inicialización del modelo está completa.
+    const addMessage = (text, sender) => {
+
+            const clonedTemplate = $template.content.cloneNode(true)
+            // Clona el contenido del template de mensajes para crear un nuevo mensaje.
+
+            const $newMessage = clonedTemplate.querySelector('.message')
+            // Selecciona el elemento de clase '.message' dentro del clon del template.
+
+            const $who = $newMessage.querySelector('span')
+            // Selecciona el elemento <span> que muestra quién envió el mensaje.
+            const $text = $newMessage.querySelector('p')
+            // Selecciona el elemento <p> que contendrá el texto del mensaje.
+
+            $text.textContent = text
+            // Establece el texto del mensaje.
+            $who.textContent = sender === 'bot' ? 'GPT' : 'Tú'
+            // Establece el remitente: 'GPT' si es el bot, o 'Tú' si es el usuario.
+            $newMessage.classList.add(sender)
+            // Añade una clase que indica si el mensaje fue enviado por el usuario o por el bot.
+
+            $messages.appendChild($newMessage)
+            // Añade el nuevo mensaje a la lista de mensajes en la interfaz.
+            $container.scrollTop = $container.scrollHeight
+            // Hace scroll automáticamente hacia abajo para mostrar el último mensaje.
+
+            return $text
+            // Devuelve el elemento <p> que contiene el texto del mensaje.
+        }
+
+        let welcomeMessageSent = false;
+
+        const engine = await CreateWebWorkerMLCEngine(
+            new Worker('/worker.js', { type: 'module' }),
+            SELECTED_MODEL,
+            {
+                initProgressCallback: (info) => {
+                    $info.textContent = `${info.text}`;
+                    // Se envía el mensaje de bienvenida solo si no se ha enviado antes
+                    if (info.progress === 1 && !welcomeMessageSent) {
+                        $button.removeAttribute('disabled');
+                        addMessage('¡Hola! 😊 ¿En qué puedo ayudarte hoy? Estoy listo para responder tus preguntas.', 'bot');
+                        welcomeMessageSent = true;
+                    }
                 }
             }
-        }
-    )
+        );
 
+    
     $form.addEventListener('submit', async(event) => {  
         // Añade un evento al formulario que se dispara cuando el usuario envía un mensaje.
         event.preventDefault()  
@@ -222,34 +265,7 @@
         // Hace que la ventana del chat se desplace hacia abajo, mostrando el mensaje más reciente.
     })
 
-    const addMessage = (text, sender) => {
-
-        const clonedTemplate = $template.content.cloneNode(true)  
-        // Clona el contenido del template de mensajes para crear un nuevo mensaje.
-
-        const $newMessage = clonedTemplate.querySelector('.message')  
-        // Selecciona el elemento de clase '.message' dentro del clon del template.
-
-        const $who = $newMessage.querySelector('span')  
-        // Selecciona el elemento <span> que muestra quién envió el mensaje.
-        const $text = $newMessage.querySelector('p')  
-        // Selecciona el elemento <p> que contendrá el texto del mensaje.
-
-        $text.textContent = text  
-        // Establece el texto del mensaje.
-        $who.textContent = sender === 'bot' ? 'GPT' : 'Tú'  
-        // Establece el remitente: 'GPT' si es el bot, o 'Tú' si es el usuario.
-        $newMessage.classList.add(sender)  
-        // Añade una clase que indica si el mensaje fue enviado por el usuario o por el bot.
-
-        $messages.appendChild($newMessage)  
-        // Añade el nuevo mensaje a la lista de mensajes en la interfaz.
-        $container.scrollTop = $container.scrollHeight  
-        // Hace scroll automáticamente hacia abajo para mostrar el último mensaje.
-
-        return $text  
-        // Devuelve el elemento <p> que contiene el texto del mensaje.
-    }
+    
 
 </script>
 
